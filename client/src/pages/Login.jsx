@@ -30,10 +30,18 @@ const Login = () => {
                     localStorage.setItem('userId', data.userId);
                     localStorage.setItem('userName', data.name || 'User');
                     localStorage.setItem('userEmail', data.email);
-                    localStorage.setItem('businessType', data.type);
+                    localStorage.setItem('businessName', data.businessName);
+                    localStorage.setItem('businessType', data.businessType);
+                    localStorage.setItem('userSector', data.sector);
                     localStorage.setItem('userLocation', data.location);
-                    localStorage.setItem('userCategory', data.category);
-                    navigate('/dashboard');
+                    localStorage.setItem('userCategory', data.size);
+                    localStorage.setItem('onboardingComplete', data.onboardingComplete);
+
+                    if (!data.onboardingComplete) {
+                        navigate('/onboarding');
+                    } else {
+                        navigate('/dashboard');
+                    }
                 } else {
                     alert('Registration successful! Please login.');
                     setIsRegister(false);

@@ -1,182 +1,359 @@
-import React, { useState, useEffect } from 'react';
-import { Megaphone, Copy, BarChart2, Globe, Share2 } from 'lucide-react';
-import { Bar } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+import React, { useState } from 'react';
+import { Sparkles, Wand2, Download, Loader, Image as ImageIcon, Type, Zap } from 'lucide-react';
 
 const MarketingView = () => {
-    const [productName, setProductName] = useState('');
-    const [discount, setDiscount] = useState('');
-    const [offerBasis, setOfferBasis] = useState('General');
-    const [businessType, setBusinessType] = useState('General');
-    const [generatedContent, setGeneratedContent] = useState('');
+    const [activeTab, setActiveTab] = useState('poster');
     const [loading, setLoading] = useState(false);
-    const [posterTheme, setPosterTheme] = useState('default');
-    const [reachData, setReachData] = useState(null);
-    const userId = localStorage.getItem('userId');
-    const userName = localStorage.getItem('userName'); // In real app, fetch business name
+    const [generatedPoster, setGeneratedPoster] = useState(null);
+    const [generatedCopy, setGeneratedCopy] = useState(null);
 
-    // Community Ads
-    const [communityAds, setCommunityAds] = useState([]);
+    // Poster Generation State
+    const [posterForm, setPosterForm] = useState({
+        prompt: '',
+        businessName: localStorage.getItem('businessName') || '',
+        productName: ''
+    });
 
-    const fetchAds = () => {
-        fetch('http://localhost:5000/api/marketing/community')
-            .then(res => res.json())
-            .then(data => setCommunityAds(data))
-            .catch(err => console.error(err));
-    };
+    // Copy Generation State
+    const [copyForm, setCopyForm] = useState({
+        productName: '',
+        productCategory: '',
+        targetAudience: 'general customers'
+    });
 
-    useEffect(() => {
-        fetchAds();
-    }, []);
+    const handleGeneratePoster = async () => {
+        if (!posterForm.prompt) {
+            alert('Please enter a description for your poster');
+            return;
+        }
 
-    const generateContent = () => {
         setLoading(true);
-        setReachData(null);
+        setGeneratedPoster(null);
 
-        // Simple logic to choose theme
-        if (discount > 30) setPosterTheme('mega-sale');
-        else if (productName.toLowerCase().includes('new')) setPosterTheme('new-arrival');
-        else setPosterTheme('default');
-
-        setTimeout(() => {
-            const content = `🔥 MEGA SALE! Get flat ${discount}% OFF on our premium ${productName}. Limited stock available! Hurry up and visit us today! 🛍️ #Sale #Offer #${productName.replace(/\s/g, '')}`;
-            setGeneratedContent(content);
-
-            // Mock Reach Data
-            setReachData({
-                labels: ['WhatsApp', 'Instagram', 'Facebook', 'SMS'],
-                datasets: [
-                    {
-                        label: 'Predicted Reach (Users)',
-                        data: [1500, 2300, 1800, 4500],
-                        backgroundColor: ['#25D366', '#E1306C', '#1877F2', '#F59E0B'],
-                    }
-                ]
+        try {
+            const res = await fetch('http://127.0.0.1:8000/marketing/generate-poster', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt: posterForm.prompt,
+                    business_name: posterForm.businessName,
+                    product_name: posterForm.productName
+                })
             });
 
+            const data = await res.json();
+
+            if (data.success) {
+                setGeneratedPoster(data);
+            } else {
+                alert(data.message || 'Failed to generate poster. Please try again.');
+            }
+        } catch (err) {
+            console.error('Poster generation error:', err);
+            alert('Failed to connect to AI service. Make sure the AI service is running.');
+        } finally {
             setLoading(false);
-        }, 1500);
+        }
     };
 
-    const handlePublish = () => {
-        const adData = {
-            userId,
-            businessName: userName || 'My Business',
-            offer: `${discount}% OFF on ${productName}`,
-            posterTheme,
-            offerBasis,
-            businessType
-        };
+    const handleGenerateCopy = async () => {
+        if (!copyForm.productName || !copyForm.productCategory) {
+            alert('Please fill in product name and category');
+            return;
+        }
 
-        fetch('http://localhost:5000/api/marketing/publish', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(adData)
-        })
-            .then(res => res.json())
-            .then(data => {
-                alert('Ad Published to Community Network! 🌍');
-                fetchAds(); // Refresh
+        setLoading(true);
+        setGeneratedCopy(null);
+
+        try {
+            const res = await fetch('http://127.0.0.1:8000/marketing/optimize-copy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    product_name: copyForm.productName,
+                    product_category: copyForm.productCategory,
+                    target_audience: copyForm.targetAudience
+                })
             });
+
+            const data = await res.json();
+
+            if (data.success) {
+                setGeneratedCopy(data);
+            } else {
+                alert('Failed to generate copy');
+            }
+        } catch (err) {
+            console.error('Copy generation error:', err);
+            alert('Failed to connect to AI service');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const downloadPoster = () => {
+        if (!generatedPoster) return;
+
+        const link = document.createElement('a');
+        link.href = `data:image/png;base64,${generatedPoster.image_base64}`;
+        link.download = `poster_${Date.now()}.png`;
+        link.click();
     };
 
     return (
         <div className="view-container">
-            <h2>AI Marketing & Ad Network</h2>
-
-            <div className="marketing-layout">
-                <div className="creation-column">
-                    <div className="marketing-tool">
-                        <h3>Create Campaign</h3>
-                        <div className="input-section">
-                            <label>Product / Service Name</label>
-                            <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="e.g. Silk Sarees" />
-
-                            <label>Discount / Offer (%)</label>
-                            <input type="text" value={discount} onChange={(e) => setDiscount(e.target.value)} placeholder="e.g. 20" />
-
-                            <label>Offer Basis</label>
-                            <select value={offerBasis} onChange={(e) => setOfferBasis(e.target.value)} className="input-select">
-                                <option value="General">General</option>
-                                <option value="Festive">Festive / Holiday</option>
-                                <option value="Clearance">Stock Clearance</option>
-                                <option value="New Arrival">New Arrival</option>
-                            </select>
-
-                            <label>Target Audience (Business Type)</label>
-                            <select value={businessType} onChange={(e) => setBusinessType(e.target.value)} className="input-select">
-                                <option value="General">General Public</option>
-                                <option value="B2B">Business to Business (Wholesale)</option>
-                                <option value="Local">Local Community</option>
-                            </select>
-
-                            <button className="primary-btn" onClick={generateContent} disabled={loading || !productName}>
-                                {loading ? 'Generating...' : 'Generate Assets ✨'}
-                            </button>
-                        </div>
-                    </div>
-
-                    {generatedContent && (
-                        <div className="marketing-results">
-                            <div className={`poster-preview ${posterTheme}`}>
-                                <div className="poster-content">
-                                    <h4>{posterTheme === 'mega-sale' ? '🔥 SUPER SALE 🔥' : '✨ SPECIAL OFFER ✨'}</h4>
-                                    <h1>{discount}% OFF</h1>
-                                    <p>On Premium {productName}</p>
-                                    <button>Shop Now</button>
-                                </div>
-                            </div>
-
-                            <div className="actions-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <button className="action-btn" style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 5 }} onClick={handlePublish}>
-                                    <Globe size={18} /> Publish to Network
-                                </button>
-                                <button className="secondary-btn" style={{ flex: 1, marginTop: 0 }}>
-                                    <Share2 size={18} /> Share Social
-                                </button>
-                            </div>
-
-                            <div className="output-section">
-                                <h3>Generated Caption:</h3>
-                                <div className="message-box">
-                                    <p>{generatedContent}</p>
-                                    <button className="icon-btn"><Copy size={16} /> Copy</button>
-                                </div>
-                            </div>
-
-                            {reachData && (
-                                <div className="reach-chart">
-                                    <h3>📊 Predicted Reach</h3>
-                                    <Bar data={reachData} options={{ responsive: true }} />
-                                </div>
-                            )}
-                        </div>
-                    )}
+            <div className="header-row" style={{ marginBottom: '2rem' }}>
+                <div>
+                    <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Sparkles size={28} color="#7c3aed" />
+                        AI Marketing Studio
+                    </h2>
+                    <p style={{ margin: '5px 0 0 0', color: '#64748b' }}>
+                        Generate professional posters using Stable Diffusion XL
+                    </p>
                 </div>
-
-                <div className="community-column">
-                    <h3>🌍 Community Ad Network (Live)</h3>
-                    <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem' }}>See what other businesses are promoting.</p>
-
-                    <div className="ads-feed">
-                        {communityAds.length === 0 && <p>No active ads. Be the first!</p>}
-                        {communityAds.map((ad, idx) => (
-                            <div className={`ad-card ${ad.posterTheme}`} key={idx}>
-                                <div className="ad-header">
-                                    <span className="business-name">{ad.businessName}</span>
-                                    <span className="time">{new Date(ad.timestamp).toLocaleDateString()}</span>
-                                </div>
-                                <div className="ad-body">
-                                    <h4>{ad.offer}</h4>
-                                </div>
-                                <button className="ad-cta">View Offer</button>
-                            </div>
-                        ))}
-                    </div>
+                <div className="tab-pills" style={{ background: '#f1f5f9', padding: '4px', borderRadius: '8px', display: 'flex' }}>
+                    <button
+                        onClick={() => setActiveTab('poster')}
+                        style={{
+                            padding: '8px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                            background: activeTab === 'poster' ? 'white' : 'transparent',
+                            boxShadow: activeTab === 'poster' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                            fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px'
+                        }}
+                    >
+                        <ImageIcon size={16} /> Poster Generator
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('copy')}
+                        style={{
+                            padding: '8px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                            background: activeTab === 'copy' ? 'white' : 'transparent',
+                            boxShadow: activeTab === 'copy' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                            fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px'
+                        }}
+                    >
+                        <Type size={16} /> AI Copywriter
+                    </button>
                 </div>
             </div>
+
+            {activeTab === 'poster' ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '2rem' }}>
+                    {/* Left: Input Form */}
+                    <div className="card" style={{ padding: '2rem', background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                        <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Wand2 size={20} color="#7c3aed" />
+                            Design Your Poster
+                        </h3>
+
+                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                                Describe Your Poster
+                            </label>
+                            <textarea
+                                placeholder="e.g., A vibrant poster for fresh organic vegetables with green colors and a farm background"
+                                value={posterForm.prompt}
+                                onChange={(e) => setPosterForm({ ...posterForm, prompt: e.target.value })}
+                                style={{
+                                    width: '100%', minHeight: '120px', padding: '12px', borderRadius: '8px',
+                                    border: '1px solid #e2e8f0', fontSize: '0.95rem', resize: 'vertical'
+                                }}
+                            />
+                            <small style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                                Be specific about colors, style, and theme
+                            </small>
+                        </div>
+
+                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                                Product Name (Optional)
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="e.g., Fresh Tomatoes"
+                                value={posterForm.productName}
+                                onChange={(e) => setPosterForm({ ...posterForm, productName: e.target.value })}
+                                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                            />
+                        </div>
+
+                        <div className="form-group" style={{ marginBottom: '2rem' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                                Business Name
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Your Store Name"
+                                value={posterForm.businessName}
+                                onChange={(e) => setPosterForm({ ...posterForm, businessName: e.target.value })}
+                                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                            />
+                        </div>
+
+                        <button
+                            onClick={handleGeneratePoster}
+                            disabled={loading}
+                            className="primary-btn"
+                            style={{
+                                width: '100%', height: '50px', fontSize: '1.05rem', fontWeight: 600,
+                                background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
+                            }}
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader size={20} className="spin" />
+                                    Generating with AI...
+                                </>
+                            ) : (
+                                <>
+                                    <Zap size={20} />
+                                    Generate Poster
+                                </>
+                            )}
+                        </button>
+
+                        {loading && (
+                            <div style={{ marginTop: '1rem', padding: '12px', background: '#fef3c7', borderRadius: '8px', fontSize: '0.9rem', color: '#92400e' }}>
+                                ⏳ This may take 20-30 seconds. Stable Diffusion XL is generating your poster...
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right: Preview */}
+                    <div className="card" style={{ padding: '2rem', background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                        <h3 style={{ marginTop: 0 }}>Preview</h3>
+
+                        {generatedPoster ? (
+                            <div>
+                                <img
+                                    src={`data:image/png;base64,${generatedPoster.image_base64}`}
+                                    alt="Generated Poster"
+                                    style={{ width: '100%', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}
+                                />
+                                <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem' }}>
+                                    <button
+                                        onClick={downloadPoster}
+                                        className="primary-btn"
+                                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    >
+                                        <Download size={18} />
+                                        Download (1024x1024)
+                                    </button>
+                                </div>
+                                <div style={{ padding: '12px', background: '#f0fdf4', borderRadius: '8px', fontSize: '0.9rem' }}>
+                                    <strong>Model:</strong> {generatedPoster.model}<br />
+                                    <strong>Prompt:</strong> {generatedPoster.prompt}
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{
+                                height: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                justifyContent: 'center', border: '2px dashed #cbd5e1', borderRadius: '12px',
+                                color: '#94a3b8'
+                            }}>
+                                <ImageIcon size={48} style={{ marginBottom: '1rem' }} />
+                                <p>Your AI-generated poster will appear here</p>
+                                <small>Powered by Stable Diffusion XL</small>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                    {/* Copy Generator */}
+                    <div className="card" style={{ padding: '2rem', background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                        <h3 style={{ marginTop: 0 }}>AI Copywriter</h3>
+
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
+                            <label>Product Name</label>
+                            <input
+                                type="text"
+                                placeholder="e.g., Premium Basmati Rice"
+                                value={copyForm.productName}
+                                onChange={(e) => setCopyForm({ ...copyForm, productName: e.target.value })}
+                                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                            />
+                        </div>
+
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
+                            <label>Category</label>
+                            <input
+                                type="text"
+                                placeholder="e.g., Groceries, Electronics"
+                                value={copyForm.productCategory}
+                                onChange={(e) => setCopyForm({ ...copyForm, productCategory: e.target.value })}
+                                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                            />
+                        </div>
+
+                        <div className="form-group" style={{ marginBottom: '2rem' }}>
+                            <label>Target Audience</label>
+                            <select
+                                value={copyForm.targetAudience}
+                                onChange={(e) => setCopyForm({ ...copyForm, targetAudience: e.target.value })}
+                                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                            >
+                                <option value="general customers">General Customers</option>
+                                <option value="young professionals">Young Professionals</option>
+                                <option value="families">Families</option>
+                                <option value="budget shoppers">Budget Shoppers</option>
+                                <option value="premium buyers">Premium Buyers</option>
+                            </select>
+                        </div>
+
+                        <button
+                            onClick={handleGenerateCopy}
+                            disabled={loading}
+                            className="primary-btn"
+                            style={{ width: '100%', height: '50px' }}
+                        >
+                            {loading ? 'Generating...' : 'Generate Copy'}
+                        </button>
+                    </div>
+
+                    {/* Generated Copy */}
+                    <div className="card" style={{ padding: '2rem', background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                        <h3 style={{ marginTop: 0 }}>Generated Copy</h3>
+
+                        {generatedCopy ? (
+                            <div>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Headline</label>
+                                    <h2 style={{ margin: '5px 0', color: '#1e293b' }}>{generatedCopy.headline}</h2>
+                                </div>
+
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tagline</label>
+                                    <p style={{ margin: '5px 0', fontSize: '1.1rem', color: '#475569' }}>{generatedCopy.tagline}</p>
+                                </div>
+
+                                <div>
+                                    <label style={{ fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Key Selling Points</label>
+                                    <ul style={{ marginTop: '10px', paddingLeft: '1.5rem' }}>
+                                        {generatedCopy.selling_points.map((point, idx) => (
+                                            <li key={idx} style={{ marginBottom: '8px', color: '#334155' }}>{point}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {generatedCopy.note && (
+                                    <div style={{ marginTop: '1rem', padding: '10px', background: '#fef3c7', borderRadius: '6px', fontSize: '0.85rem', color: '#92400e' }}>
+                                        {generatedCopy.note}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                                <Type size={48} style={{ marginBottom: '1rem' }} />
+                                <p>AI-generated marketing copy will appear here</p>
+                                <small>Powered by Ollama LLM</small>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -19,6 +19,16 @@
       "location": "India",
       "size": "Micro",
       "_id": "1766742660410topck"
+    },
+    {
+      "name": "NIVARTHI SRINIDHI KROUNCHA",
+      "email": "srinidhikrounchanivarthi1956@gmail.com",
+      "password": "Srini@1956",
+      "type": "Grocery / Kirana",
+      "sector": "General",
+      "location": "India",
+      "size": "Micro",
+      "_id": "1768491057578nqu6x"
     }
   ],
   "products": [
@@ -93,6 +103,51 @@
       "status": "Good",
       "userId": "1766742660410topck",
       "_id": "1766742660415xxg09"
+    },
+    {
+      "name": "Rice (25kg Bag)",
+      "stock": 10,
+      "price": 1250,
+      "reorderLevel": 3,
+      "status": "Good",
+      "userId": "1768491057578nqu6x",
+      "_id": "1768491057580xwyd6"
+    },
+    {
+      "name": "Sunflower Oil (1L)",
+      "stock": 30,
+      "price": 140,
+      "reorderLevel": 10,
+      "status": "Good",
+      "userId": "1768491057578nqu6x",
+      "_id": "1768491057581jx5vn"
+    },
+    {
+      "name": "Sugar (kg)",
+      "stock": 40,
+      "price": 45,
+      "reorderLevel": 10,
+      "status": "Good",
+      "userId": "1768491057578nqu6x",
+      "_id": "176849105758212miy"
+    },
+    {
+      "name": "Toor Dal (kg)",
+      "stock": 25,
+      "price": 110,
+      "reorderLevel": 5,
+      "status": "Good",
+      "userId": "1768491057578nqu6x",
+      "_id": "1768491057584ijyzs"
+    },
+    {
+      "name": "Tea Powder (250g)",
+      "stock": 50,
+      "price": 90,
+      "reorderLevel": 12,
+      "status": "Good",
+      "userId": "1768491057578nqu6x",
+      "_id": "1768491057585m7278"
     }
   ],
   "transactions": [

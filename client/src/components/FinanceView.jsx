@@ -5,13 +5,14 @@ const FinanceView = () => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [activeFinanceTab, setActiveFinanceTab] = useState('transactions');
     const userId = localStorage.getItem('userId');
 
     // New Transaction Form
-    const [newTx, setNewTx] = useState({ desc: '', amount: '', type: 'Income', date: '' });
+    const [newTx, setNewTx] = useState({ desc: '', amount: '', type: 'Income', date: '', category: 'General' });
 
     const fetchTransactions = () => {
-        fetch(`http://localhost:5000/api/finance/${userId}`)
+        fetch(`http://127.0.0.1:5000/api/finance/${userId}`)
             .then(res => res.json())
             .then(data => {
                 setTransactions(data);
@@ -29,7 +30,7 @@ const FinanceView = () => {
 
     const handleAddTransaction = (e) => {
         e.preventDefault();
-        fetch('http://localhost:5000/api/finance/add', {
+        fetch('http://127.0.0.1:5000/api/finance/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...newTx, userId })
@@ -39,7 +40,7 @@ const FinanceView = () => {
                 if (data.transaction) {
                     alert('Transaction Recorded!');
                     setShowModal(false);
-                    setNewTx({ desc: '', amount: '', type: 'Income', date: '' });
+                    setNewTx({ desc: '', amount: '', type: 'Income', date: '', category: 'General' });
                     fetchTransactions(); // Refresh
                 }
             })
@@ -57,67 +58,72 @@ const FinanceView = () => {
         <div className="view-container">
             <div className="header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2>Finance & Cashflow</h2>
-                <button className="primary-btn" style={{ width: 'auto' }} onClick={() => setShowModal(true)}>
-                    <Plus size={18} style={{ marginRight: 5 }} /> Record Transaction
-                </button>
-            </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
 
-            <div className="finance-summary">
-                <div className="f-card income">
-                    <span>Total Income</span>
-                    <h3>₹{totalIncome}</h3>
-                </div>
-                <div className="f-card expense">
-                    <span>Total Expense</span>
-                    <h3>₹{totalExpense}</h3>
-                </div>
-                <div className="f-card balance">
-                    <span>Net Balance</span>
-                    <h3>₹{netBalance}</h3>
+                    <button className="primary-btn" style={{ width: 'auto' }} onClick={() => setShowModal(true)}>
+                        <Plus size={18} style={{ marginRight: 5 }} /> Record Entry
+                    </button>
                 </div>
             </div>
 
-            <div className="finance-legend" style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #e2e8f0' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', color: '#334155' }}>📈 Understanding Your Metrics</h4>
-                <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem', color: '#64748b' }}>
-                    <li><strong>Total Income:</strong> Sum of all money received from sales or services.</li>
-                    <li><strong>Total Expense:</strong> Sum of all outgoing costs (stock, utilities, rent).</li>
-                    <li><strong>Net Balance:</strong> Your actual profit/savings (Income - Expense). Keep this green!</li>
-                </ul>
-            </div>
+            <>
+                <div className="finance-summary">
+                    <div className="f-card income">
+                        <span>Total Income</span>
+                        <h3>₹{totalIncome}</h3>
+                    </div>
+                    <div className="f-card expense">
+                        <span>Total Expense</span>
+                        <h3>₹{totalExpense}</h3>
+                    </div>
+                    <div className="f-card balance">
+                        <span>Net Balance</span>
+                        <h3>₹{netBalance}</h3>
+                    </div>
+                </div>
 
-            <h3>Recent Transactions</h3>
-            {transactions.length === 0 ? <p style={{ color: '#64748b', padding: '1rem' }}>No transactions recorded yet.</p> : (
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Type</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {transactions.map(t => (
-                            <tr key={t._id}>
-                                <td>{t.date}</td>
-                                <td>{t.desc}</td>
-                                <td>
-                                    <span style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: 5,
-                                        color: t.type === 'Income' ? 'var(--success)' : 'var(--error)',
-                                        fontWeight: 600
-                                    }}>
-                                        {t.type === 'Income' ? <ArrowUpRight size={16} /> : <ArrowDownLeft size={16} />}
-                                        {t.type}
-                                    </span>
-                                </td>
-                                <td>₹{t.amount}</td>
+                <div className="finance-legend" style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#334155' }}>📈 Understanding Your Metrics</h4>
+                    <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem', color: '#64748b' }}>
+                        <li><strong>Total Income:</strong> Sum of all money received from sales or services.</li>
+                        <li><strong>Total Expense:</strong> Sum of all outgoing costs (stock, utilities, rent).</li>
+                        <li><strong>Net Balance:</strong> Your actual profit/savings (Income - Expense). Keep this green!</li>
+                    </ul>
+                </div>
+
+                <h3>Recent Transactions</h3>
+                {transactions.length === 0 ? <p style={{ color: '#64748b', padding: '1rem' }}>No transactions recorded yet.</p> : (
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Type</th>
+                                <th>Amount</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
+                        </thead>
+                        <tbody>
+                            {transactions.map(t => (
+                                <tr key={t._id}>
+                                    <td>{t.date}</td>
+                                    <td>{t.desc}</td>
+                                    <td>
+                                        <span style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                                            color: t.type === 'Income' ? 'var(--success)' : 'var(--error)',
+                                            fontWeight: 600
+                                        }}>
+                                            {t.type === 'Income' ? <ArrowUpRight size={16} /> : <ArrowDownLeft size={16} />}
+                                            {t.type}
+                                        </span>
+                                    </td>
+                                    <td>₹{t.amount}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </>
 
             {showModal && (
                 <div className="modal-overlay">
@@ -140,6 +146,18 @@ const FinanceView = () => {
                                 <select value={newTx.type} onChange={e => setNewTx({ ...newTx, type: e.target.value })}>
                                     <option value="Income">Income (+)</option>
                                     <option value="Expense">Expense (-)</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Category</label>
+                                <select value={newTx.category} onChange={e => setNewTx({ ...newTx, category: e.target.value })}>
+                                    <option value="General">General</option>
+                                    <option value="Inventory">Inventory</option>
+                                    <option value="Rent">Rent</option>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Salary">Salary</option>
+                                    <option value="Maintenance">Maintenance</option>
                                 </select>
                             </div>
                             <div className="form-group">

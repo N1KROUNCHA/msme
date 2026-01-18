@@ -1,0 +1,24 @@
+{
+  "enumValues": [],
+  "regExp": null,
+  "path": "type",
+  "instance": "String",
+  "schemaName": "String",
+  "validators": [
+    {
+      "message": "Path `{PATH}` is required.",
+      "type": "required"
+    }
+  ],
+  "getters": [],
+  "setters": [],
+  "_presplitPath": [
+    "type"
+  ],
+  "options": {
+    "required": true
+  },
+  "_index": null,
+  "isRequired": true,
+  "originalRequiredValue": true
+}

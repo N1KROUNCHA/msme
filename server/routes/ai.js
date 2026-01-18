@@ -1,68 +1,54 @@
 const express = require('express');
-const axios = require('axios');
-const multer = require('multer');
-const FormData = require('form-data');
 const router = express.Router();
+const axios = require('axios');
 
-const upload = multer({ storage: multer.memoryStorage() });
-
-const AI_SERVICE_URL = 'http://127.0.0.1:8000';
-
-// Middleware to check if AI service is running
-const checkAIService = async (req, res, next) => {
+// @route   POST api/ai/pricing/optimize
+// @desc    Get pricing suggestions from AI Brain
+// @access  Private
+router.post('/pricing/optimize', async (req, res) => {
     try {
-        await axios.get(`${AI_SERVICE_URL}/`);
-        next();
-    } catch (error) {
-        console.error('AI Service Validation Error:', error.message);
-        res.status(503).json({
-            error: 'AI Service Unavailable',
-            details: 'The Python AI Brain is not responding. Please ensure the AI service is running.'
-        });
-    }
-};
-
-// Route: Get Optimized Price
-router.post('/pricing/optimize', checkAIService, async (req, res) => {
-    try {
-        const { product_name, base_price, current_stock, days_to_expiry, competitor_price } = req.body;
-
-        // Forward to Python Service
-        const response = await axios.post(`${AI_SERVICE_URL}/pricing/optimize`, {
-            product_name,
-            base_price,
-            current_stock,
-            days_to_expiry,
-            competitor_price
-        });
-
-        res.json(response.data);
-    } catch (error) {
-        console.error('AI Pricing Error:', error.message);
-        res.status(500).json({ error: 'Failed to get pricing suggestion' });
+        const aiResponse = await axios.post('http://127.0.0.1:8000/pricing/optimize', req.body);
+        res.json(aiResponse.data);
+    } catch (err) {
+        console.error("AI Pricing Error:", err.message);
+        res.status(500).json({ msg: 'AI Pricing Service Unreachable' });
     }
 });
 
-// Route: Analyze Shelf Image
+// @route   POST api/ai/vision/analyze
+// @desc    Analyze shelf image with Computer Vision
+// @access  Private
+const multer = require('multer');
+const upload = multer();
+const FormData = require('form-data');
+
 router.post('/vision/analyze', upload.single('image'), async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No image uploaded' });
-        }
-
         const formData = new FormData();
-        formData.append('file', req.file.buffer, req.file.originalname);
+        formData.append('file', req.file.buffer, { filename: req.file.originalname });
 
-        const response = await axios.post(`${AI_SERVICE_URL}/vision/analyze`, formData, {
-            headers: {
-                ...formData.getHeaders()
-            }
+        const aiResponse = await axios.post('http://127.0.0.1:8000/vision/analyze', formData, {
+            headers: formData.getHeaders()
         });
 
-        res.json(response.data);
-    } catch (error) {
-        console.error('AI Vision Error:', error.message);
-        res.status(500).json({ error: 'Failed to analyze shelf image' });
+        res.json(aiResponse.data);
+    } catch (err) {
+        console.error("AI Vision Error:", err.message);
+        res.status(500).json({ msg: 'Vision Service Unreachable' });
+    }
+});
+
+// @route   POST api/ai/policy
+// @desc    Query MSME Policy Expert (RAG)
+// @access  Private
+router.post('/policy', async (req, res) => {
+    try {
+        const { query } = req.body;
+        const aiResponse = await axios.post('http://127.0.0.1:8000/agent/policy', { query });
+        res.json(aiResponse.data);
+    } catch (err) {
+        console.error("AI Policy Error:", err.message);
+        res.status(500).json({ msg: 'Policy Service Unreachable' });
     }
 });
 

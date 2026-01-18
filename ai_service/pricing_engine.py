@@ -74,4 +74,4 @@ class PricingAgent:
             self.q_table = {}
 
 # Singleton instance
-agent = PricingAgent()
+pricing_agent = PricingAgent()
