@@ -6,7 +6,7 @@ const PolicyExpert = () => {
     const [messages, setMessages] = useState([
         {
             role: 'bot',
-            content: "Hello! I am your MSME Policy Expert. I can help you understand government schemes like MUDRA, PMEGP, and CGTMSE. How can I assist you today?",
+            content: "Hello! I am your MSME Policy & Loan Expert. I can help you with government schemes, MUDRA loans, SIDBI financing, and compliance. How can I assist you today?",
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
     ]);
@@ -60,9 +60,12 @@ const PolicyExpert = () => {
     };
 
     const suggestedQueries = [
-        "Tell me about MUDRA loans",
-        "What is PMEGP subsidy?",
-        "How to handle delayed payments?",
+        "What are the latest SIDBI loan schemes?",
+        "Tell me about loans for women entrepreneurs",
+        "Explain Stand-Up India benefits 2025",
+        "Tell me about MUDRA loan categories",
+        "What is RoDTEP for exporters?",
+        "Explain Interest Subvention for MSME",
         "CGTMSE guarantee limit 2025"
     ];
 
@@ -71,9 +74,9 @@ const PolicyExpert = () => {
             <div className="header" style={{ marginBottom: '2rem' }}>
                 <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <ShieldCheck size={32} color="#4f46e5" />
-                    MSME Policy Expert
+                    AI Policy & Loan Expert
                 </h1>
-                <p style={{ color: '#6b7280' }}>AI-powered assistant for government schemes and compliance.</p>
+                <p style={{ color: '#6b7280' }}>Your unified AI assistant for schemes, subsidies, and financial compliance.</p>
             </div>
 
             <div className="chat-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem', flex: 1, overflow: 'hidden' }}>

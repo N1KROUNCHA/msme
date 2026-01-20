@@ -8,7 +8,8 @@ const ProductSchema = new mongoose.Schema({
     costPrice: { type: Number },
     stock: { type: Number, required: true, default: 0 },
     reorderLevel: { type: Number, default: 10 },
-    lastRestocked: { type: Date }
+    lastRestocked: { type: Date },
+    history: { type: [Number], default: [] } // Store last 60 days sales history
 });
 
 module.exports = mongoose.model('Product', ProductSchema);

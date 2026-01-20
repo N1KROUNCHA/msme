@@ -7,7 +7,11 @@ const { calculateGST } = require('../utils/tax_engine');
 router.get('/:userId', async (req, res) => {
     const { userId } = req.params;
     try {
-        const transactions = await Transaction.find({ userId }).sort({ date: -1 });
+        // Sort by date DESC, then by creation time (_id) DESC to show newest first.
+        // Limit to 500 to prevent browser crash from massive dataset.
+        const transactions = await Transaction.find({ userId })
+            .sort({ date: -1, _id: -1 })
+            .limit(500);
         res.json(transactions);
     } catch (err) {
         res.status(500).json({ msg: 'Server Error' });
@@ -16,7 +20,7 @@ router.get('/:userId', async (req, res) => {
 
 // Add new transaction
 router.post('/add', async (req, res) => {
-    const { userId, date, desc, type, amount } = req.body;
+    const { userId, date, desc, type, amount, category } = req.body;
 
     try {
         const newTransaction = new Transaction({
@@ -24,7 +28,8 @@ router.post('/add', async (req, res) => {
             date: date || new Date(),
             desc,
             type, // 'Income' or 'Expense'
-            amount: parseFloat(amount)
+            amount: parseFloat(amount),
+            category: category || 'General' // Ensure category is saved
         });
 
         const saved = await newTransaction.save();

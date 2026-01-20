@@ -92,6 +92,15 @@ router.post('/sell', async (req, res) => {
 
         // 1. Update stock
         product.stock -= qty;
+
+        // 2. Update Demand History (Live Sync for Forecasting)
+        // Assume the last element of the history array represents "Today" (or most recent active day)
+        // This ensures the Demand Graph updates instantly when a sale is made.
+        if (product.history && product.history.length > 0) {
+            product.history[product.history.length - 1] += qty;
+            product.markModified('history'); // Tell Mongoose the array changed
+        }
+
         const savedProduct = await product.save();
         console.log(`[Inventory] Stock updated for ${product.name}. New stock: ${product.stock}`);
 
@@ -144,6 +153,13 @@ router.post('/bulk-sell', async (req, res) => {
             const lineCost = (product.costPrice || product.price * 0.8) * item.quantity;
 
             product.stock -= item.quantity;
+
+            // 2. Update Demand History (Live Sync)
+            if (product.history && product.history.length > 0) {
+                product.history[product.history.length - 1] += item.quantity;
+                product.markModified('history');
+            }
+
             await product.save();
 
             totalSellAmount += lineSell;

@@ -57,4 +57,15 @@ router.post('/add', async (req, res) => {
     }
 });
 
+// Delete a customer account
+router.delete('/:id', async (req, res) => {
+    try {
+        await Credit.findByIdAndDelete(req.params.id);
+        res.json({ msg: 'Account deleted successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

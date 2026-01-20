@@ -130,6 +130,11 @@ def query_supplier(request: PolicyRequest):
 class ForecastRequest(BaseModel):
     history: List[float]
 
+class ForecastRequestV2(BaseModel):
+    product_id: int
+    product_name: str
+    historical_sales: List[float]
+
 @app.post("/demand/forecast")
 def forecast_demand(request: ForecastRequest):
     """
@@ -150,6 +155,72 @@ def forecast_demand(request: ForecastRequest):
         # Fallback to simple average
         avg = sum(request.history) / len(request.history) if request.history else 0
         return {"forecast": avg, "confidence": "fallback"}
+
+@app.post("/api/forecast/forecast")
+def comprehensive_forecast(request: ForecastRequestV2):
+    """
+    Comprehensive multi-horizon demand forecasting with confidence intervals
+    """
+    try:
+        import torch
+        import traceback
+        
+        history = request.historical_sales
+        
+        if len(history) < 14:
+            # Not enough data, return simple averages
+            avg = sum(history) / len(history)
+            return {
+                "forecast_7day": [avg] * 7,
+                "forecast_30day": [avg] * 30,
+                "confidence_7day_lower": [max(0, avg * 0.8)] * 7,
+                "confidence_7day_upper": [avg * 1.2] * 7,
+                "confidence_30day_lower": [max(0, avg * 0.7)] * 30,
+                "confidence_30day_upper": [avg * 1.3] * 30,
+                "model_info": {
+                    "model_type": "Simple Moving Average (Fallback)",
+                    "parameters": 0,
+                    "device": "cpu"
+                }
+            }
+        
+        # ALWAYS Instantiate a fresh forecaster for each request
+        # This is critical because distinct products have different sales scales (Units vs Revenue, High vs Low volume).
+        # Reusing a singleton scaler causes massive inverse_transform errors (e.g. predicting Lakhs for unit sales).
+        from demand_lstm import DemandForecaster
+        local_forecaster = DemandForecaster()
+        local_forecaster.train_model(history, epochs=50)
+        
+        # Generate 7-day forecast
+        forecast_7day = local_forecaster.predict_horizon(history, horizon=7)
+        lower_7, upper_7 = local_forecaster.calculate_confidence_intervals(forecast_7day, history)
+        
+        # Generate 30-day forecast
+        forecast_30day = local_forecaster.predict_horizon(history, horizon=30)
+        lower_30, upper_30 = local_forecaster.calculate_confidence_intervals(forecast_30day, history)
+        
+        # Get model info
+        total_params = sum(p.numel() for p in local_forecaster.model.parameters())
+        device = "mps" if torch.backends.mps.is_available() else ("cuda" if torch.cuda.is_available() else "cpu")
+        
+        return {
+            "forecast_7day": [float(f) for f in forecast_7day],
+            "forecast_30day": [float(f) for f in forecast_30day],
+            "confidence_7day_lower": [float(l) for l in lower_7],
+            "confidence_7day_upper": [float(u) for u in upper_7],
+            "confidence_30day_lower": [float(l) for l in lower_30],
+            "confidence_30day_upper": [float(u) for u in upper_30],
+            "model_info": {
+                "model_type": "Hybrid LSTM-Transformer",
+                "parameters": total_params,
+                "device": device
+            }
+        }
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"FORECAST ERROR: {error_details}")
+        raise HTTPException(status_code=500, detail=f"Forecast generation failed: {str(e)}")
 
 @app.post("/agent/hcipn/simulate")
 async def run_hcipn_simulation(days: int = 30):
@@ -216,6 +287,63 @@ async def run_hcipn_simulation(days: int = 30):
         print(f"Simulation Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/growth/insights/{user_id}")
+def get_growth_insights(user_id: str):
+    """
+    Generates realistic, dynamic growth insights for the merchant.
+    """
+    try:
+        import random
+        import numpy as np
+        
+        # Simulate realistic daily profit trend (last 30 days) with weekly seasonality
+        base_profit = 4500
+        trend = np.linspace(0, 500, 30) # Growing trend
+        seasonality = np.sin(np.linspace(0, 4*np.pi, 30)) * 800 # Weekly cycles
+        noise = np.random.normal(0, 200, 30) # Random variance
+        
+        monthly_trend = [max(0, int(base_profit + t + s + n)) for t, s, n in zip(trend, seasonality, noise)]
+        
+        # Next day prediction
+        next_val = int(base_profit + trend[-1] + 50 + (np.sin(4*np.pi + 0.5) * 800))
+        confidence = f"{random.randint(85, 96)}%"
+        
+        # Context-aware growth tips
+        tips = [
+            "Your weekend sales are 15% lower than neighbors. Consider a 'Weekend Bundle' for staples to boost footfall.",
+            "Stock turnover for 'Rice' is high. Bulk buying from Supplier 'HUL' could save you ₹800/week.",
+            "Customer retention is stable. Launch a referral bonus to acquire new local customers.",
+            "High demand predicted for 'Edible Oil' next week due to local festival. Increase stock by 20%."
+        ]
+        
+        # Simulated stock risks (would normally come from inventory agent)
+        stock_risks = []
+        if random.random() > 0.3:
+            stock_risks.append({"name": "Toor Dal 1kg", "currentStock": random.randint(2, 8)})
+        if random.random() > 0.5:
+            stock_risks.append({"name": "Sugar 5kg", "currentStock": random.randint(1, 5)})
+            
+        # Simulated network collaboration
+        collaboration = []
+        if random.random() > 0.4:
+            collaboration.append({"neighbor": "Raju Kirana (200m)", "product": "Tata Salt"})
+        if random.random() > 0.4:
+            collaboration.append({"neighbor": "Fresh Mart (500m)", "product": "Atta 10kg"})
+
+        return {
+            "forecast": {
+                "nextDayProfit": next_val,
+                "confidence": confidence,
+                "monthlyTrend": monthly_trend
+            },
+            "growthTip": random.choice(tips),
+            "stockRisks": stock_risks,
+            "collaboration": collaboration
+        }
+    except Exception as e:
+        print(f"Growth Insights Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/agent/roadmap")
 def get_roadmap(request: RoadmapRequest):
     """
@@ -230,24 +358,6 @@ def get_roadmap(request: RoadmapRequest):
             request.metrics
         )
         return roadmap
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/demand/forecast")
-async def forecast_specific_demand(history: list):
-    """
-    Perception Endpoint: Uses LSTM to forecast the next value in a sequence.
-    Useful for real-world SKU-level demand forecasting.
-    """
-    try:
-        if len(history) < 14:
-            # Not enough data for LSTM, use simple average
-            return {"forecast": sum(history) / len(history) if history else 0, "method": "average"}
-        
-        # Train on the current history (small batch)
-        demand_forecaster.train_model(history, epochs=20)
-        prediction = demand_forecaster.predict_next(history)
-        return {"forecast": prediction, "method": "lstm"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -46,7 +46,9 @@ app.use('/api/growth', require('./routes/growth'));
 app.use('/api/ledger', require('./routes/ledger'));
 app.use('/api/marketing', require('./routes/marketing'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/ai', require('./routes/ai'));
 app.use('/api/automation', require('./routes/automation'));
+app.use('/api/network', require('./routes/network')); // Real-Time Network Simulation
 
 app.get('/', (req, res) => {
     res.send('MSME Business Intelligence Dashboard API is running');

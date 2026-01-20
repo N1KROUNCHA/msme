@@ -40,7 +40,6 @@ class DemandForecaster:
     def train_model(self, history: List[float], epochs=50):
         """
         Trains the LSTM model on historical sales data.
-        For a research paper, we would include validation splits here.
         """
         if len(history) < 14:
             print("Insufficient data for LSTM training. Minimum 14 points required.")

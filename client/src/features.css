@@ -659,3 +659,9 @@ header h1 {
 .ad-cta:hover {
     background: #e2e8f0;
 }
+
+/* Spinner Animation for Lazy Loading */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

@@ -35,7 +35,49 @@ A portal to monitor implementation of Public Procurement Policy.
 - **Goal:** Ensures that 25% of annual procurement by Central Ministries/Departments/PSUs is from MSEs.
 - **Market Access:** Provides detailed information on products being sourced by PSUs.
 
-## 6. PM Vishwakarma Scheme
-Supports traditional artisans and craftspeople.
-- **Benefits:** Credit support (up to ₹3 Lakh in two tranches), toolkit incentive, skill training, and digital transaction incentives.
-- **Interest Rate:** Concessional rate of 5%.
+## 7. SIDBI Loans (Small Industries Development Bank of India)
+SIDBI provides specialized financial products for MSMEs.
+- **SMILE (SIDBI Make In India Soft Loan Fund):** Focuses on 25 sectors under Make in India.
+- **SPEED (Loan for Purchase of Equipment for Enterprise Development):** 100% financing for machinery/equipment.
+- **ARISE (SIDBI Assistance to Re-energize MSME Sector):** Financial assistance for scaling and modernization.
+
+## 8. NABARD Support for Rural MSMEs
+NABARD focuses on rural and agricultural enterprise growth.
+- **Off-Farm Sector (OFS) Schemes:** Supports rural artisans, weaving, and handicrafts.
+- **Self Help Groups (SHG) Loans:** Credit linkage for rural micro-enterprises.
+
+## 9. Interest Subvention Scheme for MSMEs
+Provides relief in interest rates for incremental credit.
+- **Benefit:** 2% interest subvention for all GST-registered MSMEs on fresh or incremental loans.
+- **Eligibility:** Applicable to working capital and term loans.
+
+## 10. Digital MSME Scheme
+Promotes IT adoption among MSMEs.
+- **Benefits:** Subsidies for cloud computing services, digital tools, and website development.
+- **Goal:** Enhancing competitiveness through digitalization.
+
+## 11. Export Support (RoDTEP & Market Access)
+- **RoDTEP:** Remission of Duties and Taxes on Exported Products. Provides a refund of embedded taxes/duties at state and central levels.
+- **Market Access Initiative (MAI):** Supports MSMEs in participating in international trade fairs and exhibitions.
+- **Gold Card Scheme:** Simplifies credit access for export-oriented units.
+
+## 13. Loans for Women Entrepreneurs
+Specialized schemes to empower women-led businesses (at least 51% stake).
+- **Stand-Up India:** Loans from ₹10 Lakh to ₹1 Crore for greenfield projects. Update 2025: Faster digital approvals and ₹1,500 Cr additional corpus.
+- **Mahila Udyam Nidhi (SIDBI):** Soft loans for setting up new micro/small units.
+- **Annapurna Scheme:** Loans up to ₹50,000 for food catering businesses (purchasing utensils/equipment).
+- **Udyogini Scheme:** Interest-free or low-interest loans for women in trade, agriculture, and small business.
+- **Cent Kalyani (CBI):** Collateral-free loans for new ventures or scaling existing ones.
+- **Stree Shakti Package (SBI):** Concessional interest rates (up to 0.50% reduction) for women-owned enterprises.
+
+## 14. Private & Public Bank MSME Loans
+Major Indian banks provide dedicated MSME credit lines.
+- **HDFC Bank MSME Loans:** Offers working capital, term loans, and credit lines (CGTMSE backed).
+- **ICICI Bank Instabiz:** Instant overdraft facility and digital business loans.
+- **SBI Asset Backed Loans:** Loans against property or inventory for expansion.
+- **Axis Bank MSME Samriddhi:** Customized credit for tiny and micro segments.
+- **Interest Rates:** Usually ranges from 8.5% to 14% based on credit score.
+
+## 15. New Budget 2025-26 Initiatives
+- **Term Loans for Women/SC/ST:** New scheme for 5 lakh first-time entrepreneurs providing loans up to ₹2 Crore over 5 years.
+- **Credit Support:** Increased guarantee limits for MSEs to foster higher risk-taking by banks.

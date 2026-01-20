@@ -7,52 +7,80 @@ const Transaction = require('../models/Transaction');
 const formatDate = (date) => date.toISOString().split('T')[0];
 
 // Get Dashboard Summary
+// Get Dashboard Summary (High Performance Aggregation)
 router.get('/summary/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
+        const mongoose = require('mongoose');
 
-        // Get Data
-        const transactions = await Transaction.find({ userId });
+        // Performance: Only analyze last 6 months
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-        // Calculate Revenue (Monthly Sales)
-        const incomeTx = transactions.filter(t => t.type === 'Income');
-        const expenseTx = transactions.filter(t => t.type === 'Expense');
+        // Aggregation Pipeline for Financials
+        const financials = await Transaction.aggregate([
+            {
+                $match: {
+                    userId: new mongoose.Types.ObjectId(userId),
+                    date: { $gte: sixMonthsAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalSales: {
+                        $sum: { $cond: [{ $eq: ["$type", "Income"] }, "$amount", 0] }
+                    },
+                    totalCOGS: {
+                        $sum: { $cond: [{ $eq: ["$type", "Income"] }, "$totalCost", 0] }
+                    },
+                    totalOpEx: {
+                        $sum: { $cond: [{ $eq: ["$type", "Expense"] }, "$amount", 0] }
+                    },
+                    netProfit: { $sum: "$profit" }
+                }
+            }
+        ]);
 
-        const monthlySales = incomeTx.reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
-        // Fallback: If totalCost is missing, derive it from amount - profit
-        const monthlyCOGS = incomeTx.reduce((acc, t) => acc + (Number(t.totalCost) || (Number(t.amount) - Number(t.profit)) || 0), 0);
-        // Fallback: If amount is missing for expense, use profit (absolute)
-        const operatingExpenses = expenseTx.reduce((acc, t) => acc + (Number(t.amount) || Math.abs(Number(t.profit)) || 0), 0);
+        const stats = financials[0] || { totalSales: 0, totalCOGS: 0, totalOpEx: 0, netProfit: 0 };
 
-        console.log(`[Dashboard] User: ${userId} - Sales: ${monthlySales}, COGS: ${monthlyCOGS}, OpEx: ${operatingExpenses}`);
-
-        // Net Profit = (Sales - COGS) - OpEx
-        // Or simply sum the 'profit' field which we've carefully populated
-        const netProfit = transactions.reduce((acc, t) => acc + (t.profit || 0), 0);
-
-        // Inventory
-        const userProducts = await Product.find({ userId });
-        const lowStockCount = userProducts.filter(p => p.stock <= (p.reorderLevel || 10)).length;
-
-        // Category Breakdown for Expenses
-        const expenseBreakdown = {};
-        expenseTx.forEach(t => {
-            const cat = t.category || "General Ops";
-            expenseBreakdown[cat] = (expenseBreakdown[cat] || 0) + t.amount;
+        // Inventory Count (Efficient)
+        const lowStockCount = await Product.countDocuments({
+            userId,
+            $expr: { $lte: ["$stock", { $ifNull: ["$reorderLevel", 10] }] }
         });
 
+        // Expense Breakdown (Aggregation)
+        const expenseBreakdownRaw = await Transaction.aggregate([
+            {
+                $match: {
+                    userId: new mongoose.Types.ObjectId(userId),
+                    type: "Expense",
+                    date: { $gte: sixMonthsAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: { $ifNull: ["$category", "General Ops"] },
+                    total: { $sum: "$amount" }
+                }
+            }
+        ]);
+
+        const expenseBreakdown = expenseBreakdownRaw.map(e => ({ name: e._id, value: e.total }));
+
         res.json({
-            monthlySales: Math.round(monthlySales),
-            monthlyCOGS: Math.round(monthlyCOGS),
-            operatingExpenses: Math.round(operatingExpenses),
-            profit: Math.round(netProfit),
-            moneyFlow: Math.round(netProfit), // Aliasing for frontend compatibility
+            monthlySales: Math.round(stats.totalSales),
+            monthlyCOGS: Math.round(stats.totalCOGS),
+            operatingExpenses: Math.round(stats.totalOpEx),
+            profit: Math.round(stats.netProfit),
+            moneyFlow: Math.round(stats.netProfit),
             lowStockCount: lowStockCount,
-            expenseBreakdown: Object.entries(expenseBreakdown).map(([name, value]) => ({ name, value }))
+            expenseBreakdown: expenseBreakdown
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Dashboard Summary Error:", err);
         res.status(500).send('Server Error');
     }
 });
@@ -63,13 +91,28 @@ router.get('/sales-chart/:userId', async (req, res) => {
         const { userId } = req.params;
         const { timeframe } = req.query;
 
-        const transactions = await Transaction.find({ userId });
+        // Performance: Only fetch relevant data based on timeframe
+        const now = new Date();
+        let startDate = new Date(now);
+
+        if (timeframe === 'daily') {
+            startDate.setDate(now.getDate() - 7);
+        } else if (timeframe === 'weekly') {
+            startDate.setDate(now.getDate() - 28);
+        } else {
+            startDate.setMonth(now.getMonth() - 6);
+        }
+
+        const transactions = await Transaction.find({
+            userId,
+            date: { $gte: startDate }
+        }).sort({ date: -1 }).lean();
 
         let labels = [];
         let incomeData = [];
         let expenseData = [];
         let profitData = [];
-        const now = new Date();
+
 
         if (timeframe === 'weekly') {
             for (let i = 3; i >= 0; i--) {

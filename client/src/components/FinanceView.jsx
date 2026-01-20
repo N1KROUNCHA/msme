@@ -30,10 +30,21 @@ const FinanceView = () => {
 
     const handleAddTransaction = (e) => {
         e.preventDefault();
+
+        // Preserve current time to ensure sorting puts this at the top
+        const selectedDate = new Date(newTx.date);
+        const now = new Date();
+        // If selected date is today, use current time. Otherwise default to noon.
+        if (selectedDate.toDateString() === now.toDateString()) {
+            selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+        } else {
+            selectedDate.setHours(12, 0, 0);
+        }
+
         fetch('http://127.0.0.1:5000/api/finance/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...newTx, userId })
+            body: JSON.stringify({ ...newTx, date: selectedDate, userId })
         })
             .then(res => res.json())
             .then(data => {
@@ -105,7 +116,12 @@ const FinanceView = () => {
                         <tbody>
                             {transactions.map(t => (
                                 <tr key={t._id}>
-                                    <td>{t.date}</td>
+                                    <td>
+                                        {new Date(t.date).toLocaleDateString()}
+                                        <div style={{ fontSize: '0.8em', color: '#64748b' }}>
+                                            {new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    </td>
                                     <td>{t.desc}</td>
                                     <td>
                                         <span style={{

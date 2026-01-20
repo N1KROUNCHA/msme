@@ -37,7 +37,7 @@ router.get('/insights/:userId', async (req, res) => {
         // 3. Call AI Service for LSTM Forecast
         let cashflowForecast = 0;
         try {
-            const aiRes = await axios.post(`${AI_SERVICE_URL}/demand/forecast`, history);
+            const aiRes = await axios.post(`${AI_SERVICE_URL}/demand/forecast`, { history });
             cashflowForecast = aiRes.data.forecast;
         } catch (err) {
             console.error("AI Forecast Error:", err.message);
